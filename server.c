@@ -48,6 +48,63 @@ double get_stock_price(const char *stock_name, const char *date)
     return -1; // Date not found
 }
 
+double calculate_max_profit(const char *stock_name, const char *start_date, const char *end_date)
+{
+    StockData *data;
+    int records;
+
+    if (strcmp(stock_name, "MSFT") == 0)
+    {
+        data = msft_data;
+        records = msft_records;
+    }
+    else if (strcmp(stock_name, "TSLA") == 0)
+    {
+        data = tsla_data;
+        records = tsla_records;
+    }
+    else
+    {
+        printf("Stock not found\n");
+        return -1; // Stock not found
+    }
+    int start_date_index, end_date_index = -1;
+    for (int i = 0; i < records; i++)
+    {
+        if (strcmp(data[i].date, start_date) == 0)
+        {
+            start_date_index = i;
+        }
+        if (strcmp(data[i].date, end_date) == 0)
+        {
+            end_date_index = i;
+        }
+    }
+    if (start_date_index == -1 || end_date_index == -1)
+    {
+        printf("Date not found\n");
+        return -1;
+    }
+    if (start_date_index >= end_date_index)
+    {
+        printf("Selling date must be later than the buying date.\n");
+        return -1;
+    }
+    double max_profit = 0;
+    for (int buy_date_index = start_date_index; buy_date_index < end_date_index; buy_date_index++)
+    {
+        for (int sell_date_index = buy_date_index + 1; sell_date_index <= end_date_index; sell_date_index++)
+        {
+            double profit = data[sell_date_index].close_price - data[buy_date_index].close_price;
+            if (profit > max_profit)
+            {
+                max_profit = profit;
+            }
+        }
+    }
+    return max_profit;
+}
+
 void read_stock_data(const char *filename, StockData *data, int *num_records)
 {
     FILE *file = fopen(filename, "r");
@@ -66,8 +123,8 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
         token = strtok(line, ","); // date
         strcpy(data[*num_records].date, token);
 
-        for (int i = 0; i < 4; i++)
-        { // skip next 4 columns
+        for (int i = 0; i < 3; i++)
+        { // skip next 3 columns
             token = strtok(NULL, ",");
         }
         data[*num_records].close_price = atof(strtok(NULL, ",")); // closing price
@@ -133,19 +190,21 @@ int main(int argc, char *argv[])
         valread = read(new_socket, buffer, 1024); // read data from the client
         buffer[valread] = '\0';                   // null-terminate the received string
 
+        printf("%s\n", buffer);
+
         char response[100] = "This is dummy data.";
 
-        if (strcmp(buffer, "list") == 0)
+        if (strcmp(buffer, "List") == 0)
         {
             strcpy(response, "TSLA | MSFT"); // IDK if hardcoding this okay....
             send(new_socket, response, strlen(response), 0);
         }
 
-        else if (strncmp(buffer, "prices", 6) == 0)
+        else if (strncmp(buffer, "Prices", 6) == 0)
         {
             char stock_name[10];
             char date[11];
-            sscanf(buffer, "prices %s %s", stock_name, date); // Extract stock name and date
+            sscanf(buffer, "Prices %s %s", stock_name, date); // Extract stock name and date
 
             double price = get_stock_price(stock_name, date);
 
@@ -160,13 +219,25 @@ int main(int argc, char *argv[])
 
             send(new_socket, response, strlen(response), 0);
         }
-
-        else if (strcmp(buffer, "maxProfit") == 0)
+        else if (strncmp(buffer, "MaxProfit", 9) == 0)
         {
             // Parse stock name, start date, and end date from buffer
+            char stock_name[10];
+            char start_date[11];
+            char end_date[11];
+            sscanf(buffer, "MaxProfit %s %s %s", stock_name, start_date, end_date);
             // Logic to calculate max profit
+            double max_profit = calculate_max_profit(stock_name, start_date, end_date);
             // Send response back to client
-            strcpy(response, "To be implemented: maxProfit");
+            if (max_profit >= 0)
+            {
+                sprintf(response, "Max possible profit from %s to %s for %s: %.2f", 
+                    start_date, end_date, stock_name, max_profit);
+            }
+            else
+            {
+                sprintf(response, "Data not found");
+            }
             send(new_socket, response, strlen(response), 0);
         }
         else if (strcmp(buffer, "quit") == 0)
@@ -181,7 +252,7 @@ int main(int argc, char *argv[])
             send(new_socket, response, strlen(response), 0);
         }
     }
-    printf("Server killed.");
+    printf("Server killed.\n");
     return 0;
 }
 

@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         buffer[valread] = '\0'; // Null-terminate the received string
         printf("%s\n", buffer);
     }
-    printf("Client killed.");
+    printf("Client killed.\n");
 
     return 0;
 }
