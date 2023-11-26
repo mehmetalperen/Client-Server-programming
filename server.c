@@ -53,11 +53,58 @@ int main(int argc, char *argv[])
     }
     printf("Connection accepted.\n");
 
-    // Read data sent by the client
-    valread = read(new_socket, buffer, 1024);
-    printf("Received message: %s\n", buffer);
+    while (1)
+    {
+        valread = read(new_socket, buffer, 1024); // Read data from the client
+        buffer[valread] = '\0';                   // Null-terminate the received string
 
-    // Further code to handle client requests...
+        char dummyData[50] = "This is dummy data.";
 
+        // Handle 'list' command
+        if (strcmp(buffer, "list") == 0)
+        {
+            // Logic to get list of stocks (e.g., "TSLA | MSFT")
+            // Send response back to client
+            strcpy(dummyData, "To be implemented: list");
+            send(new_socket, dummyData, strlen(dummyData), 0); // Send dummy data
+        }
+        // Handle 'prices' command
+        else if (strncmp(buffer, "prices", 6) == 0)
+        {
+            // Parse stock name and date from buffer
+            // Logic to get stock price for the given date
+            // Send response back to client
+            strcpy(dummyData, "To be implemented: prices");
+            send(new_socket, dummyData, strlen(dummyData), 0); // Send dummy data
+        }
+        // Handle 'maxProfit' command
+        else if (strncmp(buffer, "maxProfit", 9) == 0)
+        {
+            // Parse stock name, start date, and end date from buffer
+            // Logic to calculate max profit
+            // Send response back to client
+            strcpy(dummyData, "To be implemented: maxProfit");
+            send(new_socket, dummyData, strlen(dummyData), 0); // Send dummy data
+        }
+        else if (strcmp(buffer, "quit") == 0)
+        {
+            strcpy(dummyData, "Server: quiting...");
+            send(new_socket, dummyData, strlen(dummyData), 0); // Send dummy data
+            break;
+        }
+
+        // Send response back to client
+        // ...
+    }
+    printf("Server killed.");
     return 0;
 }
+
+/*
+gcc -o server server.c
+gcc -o client client.c
+
+
+./server MSFT.csv TSLA.csv 30000
+./client localhost 30000
+*/

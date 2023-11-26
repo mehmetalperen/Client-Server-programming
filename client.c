@@ -36,12 +36,26 @@ int main(int argc, char *argv[])
         printf("\nConnection Failed \n");
         return -1;
     }
-    send(sock, hello, strlen(hello), 0);
-    printf("Hello message sent\n");
-    valread = read(sock, buffer, 1024);
-    printf("%s\n", buffer);
 
-    // Further code to send commands and receive responses...
+    while (1)
+    {
+        printf("> ");
+        fgets(buffer, 1024, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+
+        send(sock, buffer, strlen(buffer), 0); // send command to server
+
+        if (strcmp(buffer, "quit") == 0)
+        {
+            break;
+        }
+
+        // receive and display response from server
+        valread = read(sock, buffer, 1024);
+        buffer[valread] = '\0'; // Null-terminate the received string
+        printf("%s\n", buffer);
+    }
+    printf("Client killed.");
 
     return 0;
 }
