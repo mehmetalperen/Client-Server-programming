@@ -123,8 +123,8 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
         token = strtok(line, ","); // date
         strcpy(data[*num_records].date, token);
 
-        for (int i = 0; i < 4; i++)
-        { // skip next 4 columns
+        for (int i = 0; i < 3; i++)
+        { // skip next 3 columns
             token = strtok(NULL, ",");
         }
         data[*num_records].close_price = atof(strtok(NULL, ",")); // closing price
@@ -190,19 +190,21 @@ int main(int argc, char *argv[])
         valread = read(new_socket, buffer, 1024); // read data from the client
         buffer[valread] = '\0';                   // null-terminate the received string
 
+        printf("%s\n", buffer);
+
         char response[100] = "This is dummy data.";
 
-        if (strcmp(buffer, "list") == 0)
+        if (strcmp(buffer, "List") == 0)
         {
             strcpy(response, "TSLA | MSFT"); // IDK if hardcoding this okay....
             send(new_socket, response, strlen(response), 0);
         }
 
-        else if (strncmp(buffer, "prices", 6) == 0)
+        else if (strncmp(buffer, "Prices", 6) == 0)
         {
             char stock_name[10];
             char date[11];
-            sscanf(buffer, "prices %s %s", stock_name, date); // Extract stock name and date
+            sscanf(buffer, "Prices %s %s", stock_name, date); // Extract stock name and date
 
             double price = get_stock_price(stock_name, date);
 
@@ -217,13 +219,13 @@ int main(int argc, char *argv[])
 
             send(new_socket, response, strlen(response), 0);
         }
-        else if (strncmp(buffer, "maxProfit", 9) == 0)
+        else if (strncmp(buffer, "MaxProfit", 9) == 0)
         {
             // Parse stock name, start date, and end date from buffer
             char stock_name[10];
             char start_date[11];
             char end_date[11];
-            sscanf(buffer, "maxProfit %s %s %s", stock_name, start_date, end_date);
+            sscanf(buffer, "MaxProfit %s %s %s", stock_name, start_date, end_date);
             // Logic to calculate max profit
             double max_profit = calculate_max_profit(stock_name, start_date, end_date);
             // Send response back to client
