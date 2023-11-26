@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
         valread = read(new_socket, buffer, 1024); // read data from the client
         buffer[valread] = '\0';                   // null-terminate the received string
 
-        char response[50] = "This is dummy data.";
+        char response[100] = "This is dummy data.";
 
         if (strcmp(buffer, "list") == 0)
         {
@@ -174,6 +174,11 @@ int main(int argc, char *argv[])
             strcpy(response, "Server: quiting...");
             send(new_socket, response, strlen(response), 0);
             break;
+        }
+        else
+        {
+            strcpy(response, "Unknown request from client. Send a valid request...");
+            send(new_socket, response, strlen(response), 0);
         }
     }
     printf("Server killed.");
