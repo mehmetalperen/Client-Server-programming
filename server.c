@@ -68,7 +68,6 @@ double calculate_max_profit(const char *stock_name, const char *start_date, cons
     }
     else
     {
-        printf("Stock not found\n");
         return -1; // Stock not found
     }
     int start_date_index, end_date_index = -1;
@@ -85,13 +84,11 @@ double calculate_max_profit(const char *stock_name, const char *start_date, cons
     }
     if (start_date_index == -1 || end_date_index == -1)
     {
-        printf("Date not found\n");
-        return -1;
+        return -1; // Date not found
     }
     if (start_date_index >= end_date_index)
     {
-        printf("Selling date must be later than the buying date.\n");
-        return -1;
+        return -1; // Selling date is not later than buying date
     }
     double max_profit = 0;
     for (int buy_date_index = start_date_index; buy_date_index < end_date_index; buy_date_index++)
@@ -215,11 +212,11 @@ int main(int argc, char *argv[])
 
             if (price >= 0)
             {
-                sprintf(response_string, "Price on %s for %s: %.2f", date, stock_name, price);
+                sprintf(response_string, "%.2f", price);
             }
             else
             {
-                sprintf(response_string, "Data not found for %s on %s", stock_name, date);
+                sprintf(response_string, "Unknown");
             }
         }
         else if (strncmp(receive_cmd, "MaxProfit", 9) == 0)
@@ -234,22 +231,21 @@ int main(int argc, char *argv[])
             // Send response_string back to client
             if (max_profit >= 0)
             {
-                sprintf(response_string, "Max possible profit from %s to %s for %s: %.2f", 
-                    start_date, end_date, stock_name, max_profit);
+                sprintf(response_string, "%.2f", max_profit);
             }
             else
             {
-                sprintf(response_string, "Data not found");
+                sprintf(response_string, "Unknown");
             }
         }
         else if (strcmp(receive_cmd, "quit") == 0)
         {
-            strcpy(response_string, "Server: quiting...");
+            strcpy(response_string, "Server: quitting...");
             done = 1;
         }
         else
         {
-            strcpy(response_string, "Unknown request from client. Send a valid request...");
+            strcpy(response_string, "Invalid syntax");
         }
 
         // Inserting the string_length as the first byte of the responding msg
