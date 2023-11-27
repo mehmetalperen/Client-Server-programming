@@ -83,8 +83,6 @@ int main(int argc, char *argv[])
     read_stock_data("MSFT.csv", msft_data, &msft_records);
     read_stock_data("TSLA.csv", tsla_data, &tsla_records);
 
-    int msft_records = 0, tsla_records = 0;
-
     printf("Running server...\n");
     int server_fd, new_socket, valread;
     struct sockaddr_in address;
