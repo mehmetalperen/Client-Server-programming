@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    printf("Client...\n");
+    // printf("Client...\n");
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
         printf("> ");
         fgets(send_cmd, MAX_MSG_LENGTH - 1, stdin);
         send_cmd[strcspn(send_cmd, "\n")] = 0;
-        
-        char send_msg[MAX_MSG_LENGTH]; // First byte contains the string length, the rest contains the string
+
+        char send_msg[MAX_MSG_LENGTH];             // First byte contains the string length, the rest contains the string
         char string_length = strlen(send_cmd) + 1; // add one for the null-terminator
-        send_msg[0] = string_length; // Put string length to the first byte of message
-        strcpy(&send_msg[1], send_cmd); // Put the string to the rest of the message
+        send_msg[0] = string_length;               // Put string length to the first byte of message
+        strcpy(&send_msg[1], send_cmd);            // Put the string to the rest of the message
 
         send(sock, send_msg, MAX_MSG_LENGTH, 0); // send message to server
 
@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
 
         // receive and display response from server
         valread = read(sock, receive_msg, MAX_MSG_LENGTH);
-        receive_msg[valread] = '\0'; // Null-terminate the received string
+        receive_msg[valread] = '\0';     // Null-terminate the received string
         printf("%s\n", &receive_msg[1]); // Print everything after the first byte
     }
-    printf("Client killed.\n");
+    // printf("Client killed.\n");
 
     return 0;
 }

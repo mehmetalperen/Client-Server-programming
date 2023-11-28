@@ -140,9 +140,7 @@ int main(int argc, char *argv[])
     read_stock_data("MSFT.csv", msft_data, &msft_records);
     read_stock_data("TSLA.csv", tsla_data, &tsla_records);
 
-    int msft_records = 0, tsla_records = 0;
-
-    printf("Running server...\n");
+    printf("server started\n");
     int server_fd, new_socket, valread;
     struct sockaddr_in address;
     int opt = 1;
@@ -177,19 +175,19 @@ int main(int argc, char *argv[])
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    printf("Server is ready to accept a connection...\n");
+    // printf("Server is ready to accept a connection...\n");
     if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
     {
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    printf("Connection accepted.\n");
+    // printf("Connection accepted.\n");
 
     int done = 0;
     while (!done)
     {
         valread = read(new_socket, receive_msg, MAX_MSG_LENGTH); // read data from the client
-        receive_msg[valread] = '\0';                   // null-terminate the received string
+        receive_msg[valread] = '\0';                             // null-terminate the received string
 
         char receive_cmd[MAX_MSG_LENGTH - 1];
         strcpy(receive_cmd, &receive_msg[1]); // Extracting the command from the message
@@ -253,10 +251,10 @@ int main(int argc, char *argv[])
         char string_length = strlen(response_string) + 1;
         response_msg[0] = string_length;
         strcpy(&response_msg[1], response_string);
-        
+
         send(new_socket, response_msg, MAX_MSG_LENGTH, 0);
     }
-    printf("Server killed.\n");
+    // printf("Server killed.\n");
     return 0;
 }
 
