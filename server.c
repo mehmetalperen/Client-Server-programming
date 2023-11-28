@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define PORT 30000
+#define DEFAULT_PORT 30000
 #define MAX_RECORDS 512 // picked this number randomly
 #define STOCK_STRING_LENGTH 10
 #define DATE_STRING_LENGTH 11
@@ -137,6 +137,12 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
 
 int main(int argc, char *argv[])
 {
+    int port_number = DEFAULT_PORT;
+    if (argc >= 3)
+    {
+        port_number = atoi(argv[3]);
+    }
+
     read_stock_data("MSFT.csv", msft_data, &msft_records);
     read_stock_data("TSLA.csv", tsla_data, &tsla_records);
 
@@ -162,9 +168,9 @@ int main(int argc, char *argv[])
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(port_number);
 
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) // forcefully attaching socket to the port 30000
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) // forcefully attaching socket to the port
 
     {
         perror("bind failed");
