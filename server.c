@@ -7,10 +7,13 @@
 
 #define PORT 30000
 #define MAX_RECORDS 512 // picked this number randomly
+#define STOCK_STRING_LENGTH 10
+#define DATE_STRING_LENGTH 11
+#define MAX_MSG_LENGTH 255
 
 typedef struct
 {
-    char date[11]; // YYYY-MM-DD format
+    char date[DATE_STRING_LENGTH]; // YYYY-MM-DD format
     double close_price;
 } StockData;
 
@@ -48,6 +51,60 @@ double get_stock_price(const char *stock_name, const char *date)
     return -1; // Date not found
 }
 
+double calculate_max_profit(const char *stock_name, const char *start_date, const char *end_date)
+{
+    StockData *data;
+    int records;
+
+    if (strcmp(stock_name, "MSFT") == 0)
+    {
+        data = msft_data;
+        records = msft_records;
+    }
+    else if (strcmp(stock_name, "TSLA") == 0)
+    {
+        data = tsla_data;
+        records = tsla_records;
+    }
+    else
+    {
+        return -1; // Stock not found
+    }
+    int start_date_index, end_date_index = -1;
+    for (int i = 0; i < records; i++)
+    {
+        if (strcmp(data[i].date, start_date) == 0)
+        {
+            start_date_index = i;
+        }
+        if (strcmp(data[i].date, end_date) == 0)
+        {
+            end_date_index = i;
+        }
+    }
+    if (start_date_index == -1 || end_date_index == -1)
+    {
+        return -1; // Date not found
+    }
+    if (start_date_index >= end_date_index)
+    {
+        return -1; // Selling date is not later than buying date
+    }
+    double max_profit = 0;
+    for (int buy_date_index = start_date_index; buy_date_index < end_date_index; buy_date_index++)
+    {
+        for (int sell_date_index = buy_date_index + 1; sell_date_index <= end_date_index; sell_date_index++)
+        {
+            double profit = data[sell_date_index].close_price - data[buy_date_index].close_price;
+            if (profit > max_profit)
+            {
+                max_profit = profit;
+            }
+        }
+    }
+    return max_profit;
+}
+
 void read_stock_data(const char *filename, StockData *data, int *num_records)
 {
     FILE *file = fopen(filename, "r");
@@ -57,7 +114,7 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
         return;
     }
 
-    char line[1024];
+    char line[MAX_MSG_LENGTH - 1];
     fgets(line, sizeof(line), file); // Read the header line and ignore it
 
     while (fgets(line, sizeof(line), file))
@@ -66,8 +123,8 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
         token = strtok(line, ","); // date
         strcpy(data[*num_records].date, token);
 
-        for (int i = 0; i < 4; i++)
-        { // skip next 4 columns
+        for (int i = 0; i < 3; i++)
+        { // skip next 3 columns
             token = strtok(NULL, ",");
         }
         data[*num_records].close_price = atof(strtok(NULL, ",")); // closing price
@@ -88,7 +145,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    char buffer[1024] = {0};
+    char receive_msg[MAX_MSG_LENGTH] = {0};
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // creating socket file descriptor
     {
@@ -126,60 +183,78 @@ int main(int argc, char *argv[])
     }
     printf("Connection accepted.\n");
 
-    while (1)
+    int done = 0;
+    while (!done)
     {
-        valread = read(new_socket, buffer, 1024); // read data from the client
-        buffer[valread] = '\0';                   // null-terminate the received string
+        valread = read(new_socket, receive_msg, MAX_MSG_LENGTH); // read data from the client
+        receive_msg[valread] = '\0';                   // null-terminate the received string
 
-        char response[100] = "This is dummy data.";
+        char receive_cmd[MAX_MSG_LENGTH - 1];
+        strcpy(receive_cmd, &receive_msg[1]); // Extracting the command from the message
 
-        if (strcmp(buffer, "list") == 0)
+        printf("%s\n", receive_cmd);
+
+        char response_string[MAX_MSG_LENGTH - 1];
+
+        if (strcmp(receive_cmd, "List") == 0)
         {
-            strcpy(response, "TSLA | MSFT"); // IDK if hardcoding this okay....
-            send(new_socket, response, strlen(response), 0);
+            strcpy(response_string, "TSLA | MSFT"); // IDK if hardcoding this okay....
         }
-
-        else if (strncmp(buffer, "prices", 6) == 0)
+        else if (strncmp(receive_cmd, "Prices", 6) == 0)
         {
-            char stock_name[10];
-            char date[11];
-            sscanf(buffer, "prices %s %s", stock_name, date); // Extract stock name and date
+            char stock_name[STOCK_STRING_LENGTH];
+            char date[DATE_STRING_LENGTH];
+            sscanf(receive_cmd, "Prices %s %s", stock_name, date); // Extract stock name and date
 
             double price = get_stock_price(stock_name, date);
 
             if (price >= 0)
             {
-                sprintf(response, "Price on %s for %s: %.2f", date, stock_name, price);
+                sprintf(response_string, "%.2f", price);
             }
             else
             {
-                sprintf(response, "Data not found for %s on %s", stock_name, date);
+                sprintf(response_string, "Unknown");
             }
-
-            send(new_socket, response, strlen(response), 0);
         }
-
-        else if (strcmp(buffer, "maxProfit") == 0)
+        else if (strncmp(receive_cmd, "MaxProfit", 9) == 0)
         {
-            // Parse stock name, start date, and end date from buffer
+            // Parse stock name, start date, and end date from receive_cmd
+            char stock_name[STOCK_STRING_LENGTH];
+            char start_date[DATE_STRING_LENGTH];
+            char end_date[DATE_STRING_LENGTH];
+            sscanf(receive_cmd, "MaxProfit %s %s %s", stock_name, start_date, end_date);
             // Logic to calculate max profit
-            // Send response back to client
-            strcpy(response, "To be implemented: maxProfit");
-            send(new_socket, response, strlen(response), 0);
+            double max_profit = calculate_max_profit(stock_name, start_date, end_date);
+            // Send response_string back to client
+            if (max_profit >= 0)
+            {
+                sprintf(response_string, "%.2f", max_profit);
+            }
+            else
+            {
+                sprintf(response_string, "Unknown");
+            }
         }
-        else if (strcmp(buffer, "quit") == 0)
+        else if (strcmp(receive_cmd, "quit") == 0)
         {
-            strcpy(response, "Server: quiting...");
-            send(new_socket, response, strlen(response), 0);
-            break;
+            strcpy(response_string, "Server: quitting...");
+            done = 1;
         }
         else
         {
-            strcpy(response, "Unknown request from client. Send a valid request...");
-            send(new_socket, response, strlen(response), 0);
+            strcpy(response_string, "Invalid syntax");
         }
+
+        // Inserting the string_length as the first byte of the responding msg
+        char response_msg[MAX_MSG_LENGTH];
+        char string_length = strlen(response_string) + 1;
+        response_msg[0] = string_length;
+        strcpy(&response_msg[1], response_string);
+        
+        send(new_socket, response_msg, MAX_MSG_LENGTH, 0);
     }
-    printf("Server killed.");
+    printf("Server killed.\n");
     return 0;
 }
 

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #define PORT 30000
+#define MAX_MSG_LENGTH 255
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,8 @@ int main(int argc, char *argv[])
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
-    char buffer[1024] = {0};
+    char send_cmd[MAX_MSG_LENGTH - 1] = {0};
+    char receive_msg[MAX_MSG_LENGTH] = {0};
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -40,22 +42,27 @@ int main(int argc, char *argv[])
     while (1)
     {
         printf("> ");
-        fgets(buffer, 1024, stdin);
-        buffer[strcspn(buffer, "\n")] = 0;
+        fgets(send_cmd, MAX_MSG_LENGTH - 1, stdin);
+        send_cmd[strcspn(send_cmd, "\n")] = 0;
+        
+        char send_msg[MAX_MSG_LENGTH]; // First byte contains the string length, the rest contains the string
+        char string_length = strlen(send_cmd) + 1; // add one for the null-terminator
+        send_msg[0] = string_length; // Put string length to the first byte of message
+        strcpy(&send_msg[1], send_cmd); // Put the string to the rest of the message
 
-        send(sock, buffer, strlen(buffer), 0); // send command to server
+        send(sock, send_msg, MAX_MSG_LENGTH, 0); // send message to server
 
-        if (strcmp(buffer, "quit") == 0)
+        if (strcmp(send_cmd, "quit") == 0)
         {
             break;
         }
 
         // receive and display response from server
-        valread = read(sock, buffer, 1024);
-        buffer[valread] = '\0'; // Null-terminate the received string
-        printf("%s\n", buffer);
+        valread = read(sock, receive_msg, MAX_MSG_LENGTH);
+        receive_msg[valread] = '\0'; // Null-terminate the received string
+        printf("%s\n", &receive_msg[1]); // Print everything after the first byte
     }
-    printf("Client killed.");
+    printf("Client killed.\n");
 
     return 0;
 }
