@@ -5,11 +5,28 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define PORT 30000
+#define DEFAULT_IP_ADDRESS "127.0.0.1"
+#define DEFAULT_PORT 30000
 #define MAX_MSG_LENGTH 255
 
 int main(int argc, char *argv[])
 {
+    char *ip_address = DEFAULT_IP_ADDRESS;
+    int port_number = DEFAULT_PORT;
+
+    if (argc >= 1)
+    {
+        ip_address = argv[1];
+        if (strcmp(ip_address, "localhost") == 0)
+        {
+            ip_address = "127.0.0.1";
+        }
+    }
+    if (argc >= 2)
+    {
+        port_number = atoi(argv[2]);
+    }
+
     // printf("Client...\n");
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
@@ -24,10 +41,10 @@ int main(int argc, char *argv[])
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(port_number);
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, ip_address, &serv_addr.sin_addr) <= 0)
     {
         printf("\nInvalid address/ Address not supported \n");
         return -1;
