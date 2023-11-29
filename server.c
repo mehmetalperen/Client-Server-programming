@@ -70,7 +70,8 @@ double calculate_max_profit(const char *stock_name, const char *start_date, cons
     {
         return -1; // Stock not found
     }
-    int start_date_index, end_date_index = -1;
+    int start_date_index = -1;
+    int end_date_index = -1;
     for (int i = 0; i < records; i++)
     {
         if (strcmp(data[i].date, start_date) == 0)
@@ -135,6 +136,22 @@ void read_stock_data(const char *filename, StockData *data, int *num_records)
     fclose(file);
 }
 
+int date_format_is_valid(char *date)
+{
+    if (strlen(date) != DATE_STRING_LENGTH - 1)
+    {
+        return -1;
+    }
+    else if (date[4] != '-' || date[7] != '-')
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int port_number = DEFAULT_PORT;
@@ -147,11 +164,10 @@ int main(int argc, char *argv[])
     read_stock_data("TSLA.csv", tsla_data, &tsla_records);
 
     printf("server started\n");
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    char receive_msg[MAX_MSG_LENGTH] = {0};
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // creating socket file descriptor
     {
@@ -192,8 +208,9 @@ int main(int argc, char *argv[])
     int done = 0;
     while (!done)
     {
-        valread = read(new_socket, receive_msg, MAX_MSG_LENGTH); // read data from the client
-        receive_msg[valread] = '\0';                             // null-terminate the received string
+        char receive_msg[MAX_MSG_LENGTH] = {0};
+        int valread = read(new_socket, receive_msg, MAX_MSG_LENGTH); // read data from the client
+        receive_msg[valread] = '\0';                                 // null-terminate the received string
 
         char receive_cmd[MAX_MSG_LENGTH - 1];
         strcpy(receive_cmd, &receive_msg[1]); // Extracting the command from the message
@@ -212,34 +229,44 @@ int main(int argc, char *argv[])
             char date[DATE_STRING_LENGTH];
             sscanf(receive_cmd, "Prices %s %s", stock_name, date); // Extract stock name and date
 
-            double price = get_stock_price(stock_name, date);
-
-            if (price >= 0)
+            if (date_format_is_valid(date) == 0)
             {
-                sprintf(response_string, "%.2f", price);
+                double price = get_stock_price(stock_name, date);
+                if (price >= 0)
+                {
+                    sprintf(response_string, "%.2f", price);
+                }
+                else
+                {
+                    sprintf(response_string, "Unknown");
+                }
             }
             else
             {
-                sprintf(response_string, "Unknown");
+                sprintf(response_string, "Invalid syntax");
             }
         }
         else if (strncmp(receive_cmd, "MaxProfit", 9) == 0)
         {
-            // Parse stock name, start date, and end date from receive_cmd
             char stock_name[STOCK_STRING_LENGTH];
             char start_date[DATE_STRING_LENGTH];
             char end_date[DATE_STRING_LENGTH];
             sscanf(receive_cmd, "MaxProfit %s %s %s", stock_name, start_date, end_date);
-            // Logic to calculate max profit
-            double max_profit = calculate_max_profit(stock_name, start_date, end_date);
-            // Send response_string back to client
-            if (max_profit >= 0)
+            if (date_format_is_valid(start_date) == 0 && date_format_is_valid(end_date) == 0)
             {
-                sprintf(response_string, "%.2f", max_profit);
+                double max_profit = calculate_max_profit(stock_name, start_date, end_date);
+                if (max_profit >= 0)
+                {
+                    sprintf(response_string, "%.2f", max_profit);
+                }
+                else
+                {
+                    sprintf(response_string, "Unknown");
+                }
             }
             else
             {
-                sprintf(response_string, "Unknown");
+                sprintf(response_string, "Invalid syntax");
             }
         }
         else if (strcmp(receive_cmd, "quit") == 0)

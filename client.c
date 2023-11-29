@@ -31,8 +31,6 @@ int main(int argc, char *argv[])
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
-    char send_cmd[MAX_MSG_LENGTH - 1] = {0};
-    char receive_msg[MAX_MSG_LENGTH] = {0};
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -58,6 +56,9 @@ int main(int argc, char *argv[])
 
     while (1)
     {
+        char send_cmd[MAX_MSG_LENGTH - 1] = {0};
+        char receive_msg[MAX_MSG_LENGTH] = {0};
+
         printf("> ");
         fgets(send_cmd, MAX_MSG_LENGTH - 1, stdin);
         send_cmd[strcspn(send_cmd, "\n")] = 0;
